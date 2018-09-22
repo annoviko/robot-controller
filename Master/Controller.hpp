@@ -1,11 +1,12 @@
-#ifndef CONTROLLER_HPP
-#define CONTROLLER_HPP
-
+#pragma once
 
 #include <atomic>
 #include <string>
 #include <thread>
 #include <mutex>
+
+#include "Connection.hpp"
+#include "Measurement.hpp"
 
 
 enum RobotRequest {
@@ -21,46 +22,57 @@ enum RobotRequest {
     LEFT_BACKWARD   = LEFT | BACKWARD,
 
     PING            = 0x10,
-    ACK             = 0x11,
-    NACK            = 0x12,
     ENGINE_SPEED    = 0x13,
+    MEASUREMENT     = 0x14
 };
 
 
 class Controller {
+public:
+    using Subscriber = std::function<void(Measurement &)>;
+
 private:
-    std::string                 mDevice;
-    std::atomic<unsigned char>  mRequest;
-    std::mutex                  mLock;
+    using SubscriberDatabase = std::vector<Subscriber>;
 
-    unsigned char               mState      = (unsigned char) RobotRequest::STOP;
+private:
+    std::mutex          m_lock;
 
-    std::thread         mController;
-    bool                mStopFlag   = true;
+    std::atomic<char>   m_request;
+    char                m_state         = static_cast<char>(RobotRequest::STOP);
+
+    std::thread         m_controller;
+    bool                m_stop          = true;
+
+    Connection          m_connection;
+    Measurement         m_measurement;
+    SubscriberDatabase  m_subscribers   = { };
 
 public:
     Controller(void) = default;
 
-    Controller(const std::string & pDevice);
+    Controller(const QString & p_device);
 
-    Controller(const Controller & pOther) = delete;
+    Controller(const Controller & p_other) = delete;
 
-    Controller(Controller & pOther) = default;
+    Controller(Controller & p_other) = delete;
 
     virtual ~Controller(void) = default;
 
 public:
-    void Speed(const unsigned char pSpeed);
+    void speed(const char p_speed);
 
-    void Action(const RobotRequest pRequest);
+    void action(const RobotRequest p_request);
 
-    void Start(void);
+    void start(void);
 
-    void Stop(void);
+    void stop(void);
+
+    void subscribe(const Subscriber & p_subscriber);
+
+    bool ready(void) const;
 
 private:
-    void ThreadRunner(void);
+    void run(void);
+
+    void notify(void);
 };
-
-
-#endif

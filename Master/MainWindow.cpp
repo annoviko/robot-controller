@@ -4,18 +4,28 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    mRobot("/dev/ttyACM0"),
+    mRobot("COM5"),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     setFocus();
-    mRobot.Start();
+
+    Controller::Subscriber func = std::bind(&MainWindow::notifyMeasurementEvent, this, std::placeholders::_1);
+    mRobot.subscribe(func);
+    mRobot.start();
 }
 
 
 MainWindow::~MainWindow() {
-    mRobot.Stop();
+    mRobot.stop();
     delete ui;
+}
+
+
+void MainWindow::notifyMeasurementEvent(Measurement & p_measurement) {
+    ui->lblDistanceBack->setText(QString::number(p_measurement.m_range_back));
+    ui->lblDistanceFront->setText(QString::number(p_measurement.m_range_front));
+    ui->lblServoAngle->setText(QString::number(p_measurement.m_servo_angle));
 }
 
 
@@ -42,6 +52,10 @@ void MainWindow::mousePressEvent(QMouseEvent * event) {
 
 
 void MainWindow::processKeyCode(void) {
+    if (!mRobot.ready()) {
+        return;
+    }
+
     unsigned char control_code = 0x00;
     QString state_text = "";
 
@@ -84,10 +98,10 @@ void MainWindow::processKeyCode(void) {
     }
 
     if (mPressedButton.empty()) {
-        mRobot.Action(STOP);
+        mRobot.action(STOP);
     }
     else {
-        mRobot.Action((RobotRequest) control_code);
+        mRobot.action((RobotRequest) control_code);
     }
 
     if (ui->lblState->text() != state_text) {
@@ -101,6 +115,7 @@ void MainWindow::on_sldSpeed_sliderReleased() {
     if (speed_rate != ui->lcdSpeed->intValue()) {
         ui->lcdSpeed->display(speed_rate);
 
-        mRobot.Speed(speed_rate);
+        mRobot.speed(speed_rate);
     }
 }
+

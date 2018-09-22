@@ -1,66 +1,78 @@
 #include "Controller.hpp"
 
-#include "StringConverter.hpp"
-#include "SystemExecutor.hpp"
-
 #include <cstring>
 #include <iostream>
 #include <cerrno>
 
+#include <QSerialPort>
 
-Controller::Controller(const std::string & pDevice) : Controller() {
-    mDevice = pDevice;
+#include "StringConverter.hpp"
+#include "Measurement.hpp"
 
-    std::cout << "Device: " << pDevice << std::endl;
+
+Controller::Controller(const QString & p_device) :
+    m_connection(p_device)
+{
+    std::cout << "Device: " << p_device.data() << std::endl;
 }
 
 
-void Controller::Action(const RobotRequest pRequest) {
-    mRequest.store((unsigned char) pRequest);
+void Controller::action(const RobotRequest p_request) {
+    m_request.store(static_cast<char>(p_request), std::memory_order_seq_cst);
 }
 
 
-void Controller::Speed(const unsigned char pSpeed) {
-    std::cout << (unsigned char) ENGINE_SPEED << " " << pSpeed << std::endl;
-    std::string request = "sudo echo -n -e '" + ByteConverter::to_hex((unsigned char) ENGINE_SPEED) + ByteConverter::to_hex(pSpeed) + "' > " + mDevice;
+void Controller::speed(const char p_speed) {
+    m_connection.send({ ENGINE_SPEED, p_speed });
+}
 
-    {
-        std::lock_guard<std::mutex> guard(mLock);
-        SystemExecutor::execute(request);
+
+void Controller::start(void) {
+    m_stop = false;
+    m_controller = std::thread(&Controller::run, this);
+}
+
+
+void Controller::stop(void) {
+    m_stop = true;
+    m_controller.join();
+}
+
+
+void Controller::notify(void) {
+    std::lock_guard<std::mutex> lock(m_lock);
+    for (const auto & subscriber : m_subscribers) {
+        subscriber(m_measurement);
     }
-
-    std::cout << "Send request '" << request << "'." << std::endl;
 }
 
 
-void Controller::Start(void) {
-    mStopFlag = false;
-    mController = std::thread(&Controller::ThreadRunner, this);
+void Controller::subscribe(const Subscriber & p_subscriber) {
+    std::lock_guard<std::mutex> lock(m_lock);
+    m_subscribers.push_back(p_subscriber);
 }
 
 
-void Controller::Stop(void) {
-    mStopFlag = true;
-    mController.join();
-
-    std::string request = "sudo echo -n -e '" + ByteConverter::to_hex((unsigned char) STOP) + "' > " + mDevice;
-    SystemExecutor::execute(request);
+bool Controller::ready(void) const {
+    return !m_stop;
 }
 
 
-void Controller::ThreadRunner(void) {
+void Controller::run(void) {
     std::cout << "Robot Controller is started..." << std::endl;
 
-    while(!mStopFlag) {
-        mState = mRequest.load();
-        //mRequest.store(STOP);
+    while(!m_stop) {
+        m_state = m_request.load(std::memory_order_seq_cst);
 
-        std::string request = "sudo echo -n -e '" + ByteConverter::to_hex(mState) + "' > " + mDevice;
-        {
-            std::lock_guard<std::mutex> guard(mLock);
+        /* Send state */
+        m_connection.send(m_state);
 
-            SystemExecutor::execute(request);
-            std::cout << "Send request '" << request << "'." << std::endl;
+        /* Send request to obtain measurements */
+        auto response = m_connection.send(MEASUREMENT);
+        if (response.m_header == ResponseHeader::ACK) {
+            /* Store measurement and notify subscribers */
+            m_measurement = *((Measurement *) (response.m_payload.data()));
+            notify();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));

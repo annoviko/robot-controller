@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -23,16 +24,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
-SOURCES += main.cpp\
+SOURCES +=\
         MainWindow.cpp \
     Controller.cpp \
-    ExecutorResult.cpp \
-    SystemExecutor.cpp
+    Connection.cpp \
+    Main.cpp
 
 HEADERS  += MainWindow.h \
     Controller.hpp \
-    ExecutorResult.hpp \
-    SystemExecutor.hpp \
-    StringConverter.hpp
+    StringConverter.hpp \
+    Connection.hpp \
+    Measurement.hpp
 
 FORMS    += MainWindow.ui

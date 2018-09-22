@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
+
 
 #include <QMainWindow>
 #include <QKeyEvent>
@@ -12,19 +12,23 @@ namespace Ui {
     class MainWindow;
 }
 
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
     QSet<Qt::Key>   mPressedButton;
+
     Controller      mRobot;
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
 
-    ~MainWindow();
+    virtual ~MainWindow() override;
 
 private:
     void processKeyCode(void);
+
+    void notifyMeasurementEvent(Measurement & p_measurement);
 
 protected:
     virtual void keyPressEvent(QKeyEvent * event) override;
@@ -42,5 +46,3 @@ private slots:
 private:
     Ui::MainWindow *ui;
 };
-
-#endif // MAINWINDOW_H
