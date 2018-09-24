@@ -15,7 +15,9 @@
 
         PING = 0x10,
         ENGINE_SPEED = 0x11,
-        MEASUREMENT = 0x12
+        MEASUREMENT = 0x12,
+        SERVO_STOP = 0x13,
+        SERVO_START = 0x14
     }
 
     public class Request

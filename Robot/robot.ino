@@ -1,23 +1,28 @@
 #include <Servo.h>
+#include <NewPing.h>
 
 
 enum action_type {
-  FORWARD         = 0x01,
-  BACKWARD        = 0x02,
-  RIGHT           = 0x04,
-  LEFT            = 0x08,
-  STOP            = 0x0F,
+  FORWARD          = 0x01,
+  BACKWARD         = 0x02,
+  RIGHT            = 0x04,
+  LEFT             = 0x08,
+  STOP             = 0x0F,
   
-  RIGHT_FORWARD   = RIGHT | FORWARD,
-  RIGHT_BACKWARD  = RIGHT | BACKWARD,
-  LEFT_FORWARD    = LEFT | FORWARD,
-  LEFT_BACKWARD   = LEFT | BACKWARD,
+  RIGHT_FORWARD    = RIGHT | FORWARD,
+  RIGHT_BACKWARD   = RIGHT | BACKWARD,
+  LEFT_FORWARD     = LEFT | FORWARD,
+  LEFT_BACKWARD    = LEFT | BACKWARD,
   
-  PING            = 0x10,
-  ACK             = 0x11,
-  NACK            = 0x12,
-  ENGINE_SPEED    = 0x13,
-  MEASUREMENT     = 0x14
+  PING             = 0x10,
+  ENGINE_SPEED     = 0x11,
+  MEASUREMENT_REQ  = 0x12,
+  SERVO_STOP       = 0x13,
+  SERVO_START      = 0x14,
+
+  ACK              = 0x80,
+  NACK             = 0x81,
+  MEASUREMENT_RESP = 0x82
 };
 
 
@@ -60,8 +65,12 @@ unsigned char engine_speed = 128;
 unsigned char silence_counter = 0;
 unsigned char corruption_counter = 0;
 
+NewPing         radar_front(RADAR_TRIG_FRONT_PIN, RADAR_ECHO_FRONT_PIN, 100);
+NewPing         radar_back(RADAR_TRIG_BACK_PIN, RADAR_ECHO_BACK_PIN, 100);
+
 Servo           servo_radar;
 servo_state_t   servo_state = SERVO_MOVE_FORWARD;
+bool            g_servo_enable = true;
 
 struct robot_measurement {
   long m_range_front = 0;
@@ -177,23 +186,9 @@ namespace engine {
   }
 }
 
-
-long read_radar_distance(const char p_trig_pin, const char p_echo_pin) {
-  digitalWrite(p_trig_pin, LOW);
-  delayMicroseconds(5);
-  digitalWrite(p_trig_pin, HIGH);
-
-  delayMicroseconds(10);
-  digitalWrite(p_trig_pin, LOW);
-
-  long radar_duration = pulseIn(p_echo_pin, HIGH);
-  return (radar_duration / 2) / 29.1;
-}
-
-
 void read_sensors(void) {
-  g_measurement.m_range_front = read_radar_distance(RADAR_TRIG_FRONT_PIN, RADAR_ECHO_FRONT_PIN);
-  g_measurement.m_range_back = read_radar_distance(RADAR_TRIG_BACK_PIN, RADAR_ECHO_BACK_PIN);
+  g_measurement.m_range_front = radar_front.ping_cm();
+  g_measurement.m_range_back = radar_back.ping_cm();
 }
 
 
@@ -296,18 +291,29 @@ void loop() {
         engine::speed(Serial.read());
         break;
 
-      case MEASUREMENT:
+      case MEASUREMENT_REQ:
         read_sensors();
+
+        g_response_buffer[0] = (char) MEASUREMENT_RESP;
         memcpy(g_response_buffer + 1, (void *) &g_measurement, sizeof(robot_measurement));
         g_response_size = sizeof(g_measurement);
-        break;
         
+        break;
+
+      case SERVO_START:
+        g_servo_enable = true;
+        break;
+
+      case SERVO_STOP:
+        g_servo_enable = false;
+        break;
+      
       default:
         g_response_buffer[0] = (char) NACK;
         break;
     }
 
-#if 0
+#if 1
     read_sensors();
     Serial.print("Front (cm): ");
     Serial.print(g_measurement.m_range_front);
@@ -316,10 +322,9 @@ void loop() {
     Serial.print("Back (cm): ");
     Serial.print(g_measurement.m_range_back);
     Serial.print("\n");
-#endif
-
+#else
     Serial.write((char *) g_response_buffer, g_response_size);
-    Serial.flush();
+#endif
 
     if (g_response_buffer[0] != (char) ACK) {
       if (corruption_counter++ > 20) {
@@ -337,7 +342,9 @@ void loop() {
   }
 
   /* Move servo */
-  move_servo_radar();
+  if (g_servo_enable) {
+    move_servo_radar();
+  }
 
   delay(50);
 }

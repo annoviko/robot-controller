@@ -10,6 +10,8 @@ namespace RobotClient
 
         public Connection(string p_port)
         {
+            m_port = new SerialPort();
+
             m_port.PortName = p_port;
             m_port.BaudRate = 9600;
             m_port.DataBits = 8;
@@ -35,7 +37,11 @@ namespace RobotClient
         public Response ReceiveResponse()
         {
             byte[] response_buffer = new byte[64];
-            m_port.Read(response_buffer, 0, 1);
+            if (m_port.Read(response_buffer, 0, 1) == 0)
+            {
+                return null;
+            }
+
 
             switch((ResponseHeader) response_buffer[0])
             {

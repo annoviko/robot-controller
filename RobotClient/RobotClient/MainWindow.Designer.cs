@@ -33,6 +33,8 @@
             this.btnLeft = new System.Windows.Forms.Button();
             this.btnRight = new System.Windows.Forms.Button();
             this.grpBoxControl = new System.Windows.Forms.GroupBox();
+            this.lblEngineSpeed = new System.Windows.Forms.Label();
+            this.lblEngineState = new System.Windows.Forms.Label();
             this.lblTextEngineState = new System.Windows.Forms.Label();
             this.checkBoxRadarServo = new System.Windows.Forms.CheckBox();
             this.lblTextEngineSpeed = new System.Windows.Forms.Label();
@@ -44,8 +46,6 @@
             this.lblTextServoAngle = new System.Windows.Forms.Label();
             this.lblTextBackDistance = new System.Windows.Forms.Label();
             this.lblTextFrontDistance = new System.Windows.Forms.Label();
-            this.lblEngineState = new System.Windows.Forms.Label();
-            this.lblEngineSpeed = new System.Windows.Forms.Label();
             this.grpBoxControl.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackSpeed)).BeginInit();
             this.grpMeasurements.SuspendLayout();
@@ -110,6 +110,22 @@
             this.grpBoxControl.TabStop = false;
             this.grpBoxControl.Text = "Control";
             // 
+            // lblEngineSpeed
+            // 
+            this.lblEngineSpeed.AutoSize = true;
+            this.lblEngineSpeed.Location = new System.Drawing.Point(107, 198);
+            this.lblEngineSpeed.Name = "lblEngineSpeed";
+            this.lblEngineSpeed.Size = new System.Drawing.Size(0, 13);
+            this.lblEngineSpeed.TabIndex = 9;
+            // 
+            // lblEngineState
+            // 
+            this.lblEngineState.AutoSize = true;
+            this.lblEngineState.Location = new System.Drawing.Point(106, 168);
+            this.lblEngineState.Name = "lblEngineState";
+            this.lblEngineState.Size = new System.Drawing.Size(0, 13);
+            this.lblEngineState.TabIndex = 8;
+            // 
             // lblTextEngineState
             // 
             this.lblTextEngineState.AutoSize = true;
@@ -130,6 +146,7 @@
             this.checkBoxRadarServo.TabIndex = 4;
             this.checkBoxRadarServo.Text = "Radar Servo Rotation";
             this.checkBoxRadarServo.UseVisualStyleBackColor = true;
+            this.checkBoxRadarServo.CheckStateChanged += new System.EventHandler(this.checkBoxRadarServo_CheckStateChanged);
             // 
             // lblTextEngineSpeed
             // 
@@ -215,22 +232,6 @@
             this.lblTextFrontDistance.Size = new System.Drawing.Size(102, 13);
             this.lblTextFrontDistance.TabIndex = 8;
             this.lblTextFrontDistance.Text = "Front Distance (cm):";
-            // 
-            // lblEngineState
-            // 
-            this.lblEngineState.AutoSize = true;
-            this.lblEngineState.Location = new System.Drawing.Point(106, 168);
-            this.lblEngineState.Name = "lblEngineState";
-            this.lblEngineState.Size = new System.Drawing.Size(0, 13);
-            this.lblEngineState.TabIndex = 8;
-            // 
-            // lblEngineSpeed
-            // 
-            this.lblEngineSpeed.AutoSize = true;
-            this.lblEngineSpeed.Location = new System.Drawing.Point(107, 198);
-            this.lblEngineSpeed.Name = "lblEngineSpeed";
-            this.lblEngineSpeed.Size = new System.Drawing.Size(0, 13);
-            this.lblEngineSpeed.TabIndex = 9;
             // 
             // MainWindow
             // 

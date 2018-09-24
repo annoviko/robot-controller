@@ -17,12 +17,22 @@ namespace RobotClient
         {
             Measurement result = new Measurement
             {
-                DistanceFront = BitConverter.ToInt32(p_bytes, offset),
-                DistanceBack = BitConverter.ToInt32(p_bytes, offset + 4),
+                DistanceFront = SwapEndianness(BitConverter.ToInt32(p_bytes, offset)),
+                DistanceBack = SwapEndianness(BitConverter.ToInt32(p_bytes, offset + 4)),
                 Angle = BitConverter.ToInt16(p_bytes, offset + 8)
             };
 
             return result;
+        }
+
+        private static int SwapEndianness(Int32 value)
+        {
+            var b1 = (value >> 0) & 0xff;
+            var b2 = (value >> 8) & 0xff;
+            var b3 = (value >> 16) & 0xff;
+            var b4 = (value >> 24) & 0xff;
+
+            return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
         }
     }
 }

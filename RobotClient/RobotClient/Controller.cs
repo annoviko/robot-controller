@@ -37,13 +37,16 @@ namespace RobotClient
 
         public Controller()
         {
-            m_connection = new Connection("COM6");
+            m_connection = new Connection("COM5");
+            m_subscribers = new List<Subscriber>();
+            m_request_mutex = new Mutex();
         }
 
         public void Start()
         {
             m_stop = false;
             m_controller = new Thread(Run);
+            m_controller.Start();
         }
 
         public void Stop()
@@ -83,17 +86,37 @@ namespace RobotClient
             }
         }
 
+        public void StartServo()
+        {
+            ExecuteCommand(new Request(RequestHeader.SERVO_START));
+        }
+
+        public void StopServo()
+        {
+            ExecuteCommand(new Request(RequestHeader.SERVO_STOP));
+        }
+
         public void Run()
         {
             while(!m_stop)
             {
-                ResponseMeasurement response = (ResponseMeasurement) ExecuteCommand(new Request(RequestHeader.MEASUREMENT));
-                foreach(Subscriber client in m_subscribers)
+                try
                 {
-                    client(response.Statistic);
+                    ResponseMeasurement response = (ResponseMeasurement)ExecuteCommand(new Request(RequestHeader.MEASUREMENT));
+                    if (response != null)
+                    {
+                        foreach (Subscriber client in m_subscribers)
+                        {
+                            client(response.Statistic);
+                        }
+                    }
+                }
+                catch(Exception)
+                {
+                    Console.WriteLine("ERROR: Impossible to get response.");
                 }
 
-                Thread.Sleep(50);
+                Thread.Sleep(100);
             }
         }
     }

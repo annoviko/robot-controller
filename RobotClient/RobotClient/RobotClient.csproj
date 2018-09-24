@@ -47,7 +47,6 @@
   <ItemGroup>
     <Compile Include="Connection.cs" />
     <Compile Include="Controller.cs" />
-    <Compile Include="Header.cs" />
     <Compile Include="MainWindow.cs">
       <SubType>Form</SubType>
     </Compile>

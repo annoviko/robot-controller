@@ -21,7 +21,18 @@ namespace RobotClient
         {
             InitializeComponent();
 
+            m_pressed = new HashSet<Keys>();
+            m_controller = new Controller();
+
+            m_controller.Start();
+            m_controller.Subscribe(UpdateMeasurement);
+
             lblEngineSpeed.Text = trackSpeed.Value.ToString();
+        }
+
+        ~MainWindow()
+        {
+            m_controller.Stop();
         }
 
         private void btnUp_Click(object sender, EventArgs e)
@@ -129,6 +140,18 @@ namespace RobotClient
             lblDistanceFront.Text = p_measurement.DistanceFront.ToString();
             lblDistanceBack.Text = p_measurement.DistanceBack.ToString();
             lblAngleServo.Text = p_measurement.Angle.ToString();
+        }
+
+        private void checkBoxRadarServo_CheckStateChanged(object sender, EventArgs e)
+        {
+            if (checkBoxRadarServo.Checked)
+            {
+                m_controller.StartServo();
+            }
+            else
+            {
+                m_controller.StopServo();
+            }
         }
     }
 }
